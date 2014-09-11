@@ -5,16 +5,34 @@ require 'sinatra/reloader'
 require 'sqlite3'
 #require 'pony'
 
-def get_db
-	SQLite3::Database.new 'barbershop.db'
+def is_barber_exists? db, name
+	db.execute('select * from Barbers where name=?', [name]).length > 0
 end
 
-def get_barbers_db
-	SQLite3::Database.new 'barbers.db'
+def seed_db db, barbers
+
+	barbers.each do |barber|
+		if !is_barber_exists? db, barber
+			db.execute 'insert into Barbers (name) values (?)', [barber]
+		end 
+	end
+
+end
+
+def get_db
+	db = SQLite3::Database.new 'Users.db'
+	db.results_as_hash = true
+	return db
+end
+
+before do
+	db = get_db
+	@barbers = db.execute 'select * from Barbers'
 end
 
 configure do
-	get_db.execute 'CREATE TABLE IF NOT EXISTS "Users"
+	db = get_db
+	db.execute 'CREATE TABLE IF NOT EXISTS "Users"
 		(
 			"id" INTEGER PRIMARY KEY AUTOINCREMENT,
 			"username" TEXT,
@@ -24,12 +42,13 @@ configure do
 			"color" TEXT
 		)'
 
-	get_barbers_db.execute 'CREATE TABLE IF NOT EXISTS "Barbers"
+	db.execute 'CREATE TABLE IF NOT EXISTS "Barbers"
 		(
 			"id" INTEGER PRIMARY KEY AUTOINCREMENT,
-			"barber" TEXT UNIQUE
+			"name" TEXT 
 		)'
 
+	seed_db db, ['Jessie Pinkman', 'Walter White', 'Gus Fring', 'Mike Ehrmantraut']
 	 	
 end
 
@@ -42,7 +61,6 @@ get '/about' do
 end
 
 get '/visit' do
-	@bb = get_barbers_db.execute 'select barber from Barbers'
 	erb :visit
 end
 
@@ -51,13 +69,9 @@ get '/contacts' do
 end
 
 get '/showusers' do
-	results = get_db.execute 'select * from Users order by id desc'
-	visitline = ''
-	results.each do |row|
-	row = row.join(",  ") 
-	visitline += "#{row}<br/>"
-	end
-	erb visitline
+	db = get_db
+	@results = db.execute 'select * from Users order by id desc'
+	erb :showusers
 end
 
 post '/visit' do
