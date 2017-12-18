@@ -152,7 +152,7 @@ post '/contacts' do
 	   			:port                 => '587', 
 	    		:enable_starttls_auto => true, 
 	    		:user_name            => 'kolololya', 
-	    		:password             => 'rj16kz11', 
+	    		:password             => 'secret', 
 	    		:authentication       => :plain, 
 	    		:domain               => 'localhost.localdomain'
 	  			})
